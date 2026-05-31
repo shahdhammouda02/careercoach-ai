@@ -1,65 +1,131 @@
-import Image from "next/image";
+"use client";
+
+import { useState } from "react";
+import { useRouter } from "next/navigation";
 
 export default function Home() {
+  const router = useRouter();
+  const [jobTitle, setJobTitle] = useState("");
+  const [jobDescription, setJobDescription] = useState("");
+  const [file, setFile] = useState<File | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [agentStep, setAgentStep] = useState("");
+
+  const steps = [
+    "Reading your CV...",
+    "Analyzing job requirements...",
+    "Calculating match score...",
+    "Generating interview questions...",
+    "Building your roadmap...",
+  ];
+
+  async function handleSubmit() {
+    if (!file || !jobTitle) return;
+    setLoading(true);
+
+    for (let i = 0; i < steps.length; i++) {
+      setAgentStep(steps[i]);
+      await new Promise((r) => setTimeout(r, 800));
+    }
+
+    const formData = new FormData();
+    formData.append("cv", file);
+    formData.append("jobTitle", jobTitle);
+    formData.append("jobDescription", jobDescription);
+
+    const res = await fetch("/api/agent", {
+      method: "POST",
+      body: formData,
+    });
+
+    const data = await res.json();
+    localStorage.setItem("careercoach_result", JSON.stringify(data));
+    router.push("/results");
+  }
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
+    <main className="min-h-screen bg-linear-to-br from-slate-50 to-blue-50 flex items-center justify-center p-6">
+      <div className="w-full max-w-lg">
+
+        <div className="text-center mb-8">
+          <div className="text-4xl mb-3">🎯</div>
+          <h1 className="text-3xl font-bold text-slate-800">CareerCoach AI</h1>
+          <p className="text-slate-500 mt-2">
+            Upload your CV and get a personalized career plan
           </p>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
+
+        <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6 flex flex-col gap-4">
+
+          <div>
+            <label className="text-sm font-medium text-slate-700 mb-2 block">
+              Your CV (PDF)
+            </label>
+            <label className="flex flex-col items-center justify-center border-2 border-dashed border-slate-200 rounded-xl p-6 cursor-pointer hover:border-blue-400 transition">
+              <span className="text-2xl mb-2">📄</span>
+              <span className="text-sm text-slate-500">
+                {file ? file.name : "Click to upload PDF"}
+              </span>
+              <input
+                type="file"
+                accept=".pdf"
+                className="hidden"
+                onChange={(e) => setFile(e.target.files?.[0] ?? null)}
+              />
+            </label>
+          </div>
+
+          <div>
+            <label className="text-sm font-medium text-slate-700 mb-2 block">
+              Target Job Title
+            </label>
+            <input
+              type="text"
+              placeholder="e.g. Frontend Developer"
+              className="w-full border border-slate-200 rounded-xl p-3 text-sm focus:outline-none focus:border-blue-400"
+              value={jobTitle}
+              onChange={(e) => setJobTitle(e.target.value)}
             />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+          </div>
+
+          <div>
+            <label className="text-sm font-medium text-slate-700 mb-2 block">
+              Job Description{" "}
+              <span className="text-slate-400">(optional)</span>
+            </label>
+            <textarea
+              placeholder="Paste the job description here..."
+              className="w-full border border-slate-200 rounded-xl p-3 text-sm focus:outline-none focus:border-blue-400 resize-none"
+              rows={3}
+              value={jobDescription}
+              onChange={(e) => setJobDescription(e.target.value)}
+            />
+          </div>
+
+          <button
+            onClick={handleSubmit}
+            disabled={loading || !file || !jobTitle}
+            className="w-full bg-blue-600 text-white rounded-xl p-3 font-semibold hover:bg-blue-700 disabled:opacity-40 transition"
           >
-            Documentation
-          </a>
+            {loading ? agentStep : "🚀 Analyze with AI Agent"}
+          </button>
+
         </div>
-      </main>
-    </div>
+
+        {loading && (
+          <div className="mt-4 flex justify-center gap-2">
+            {steps.map((_, i) => (
+              <div
+                key={i}
+                className={`w-2 h-2 rounded-full transition-all ${
+                  i <= steps.indexOf(agentStep) ? "bg-blue-600" : "bg-slate-200"
+                }`}
+              />
+            ))}
+          </div>
+        )}
+
+      </div>
+    </main>
   );
 }
