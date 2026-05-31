@@ -2,7 +2,8 @@ export async function extractTextFromPDF(buffer: Buffer): Promise<string> {
   const PDFParser = (await import("pdf2json")).default;
 
   return new Promise((resolve, reject) => {
-    const parser = new PDFParser(null, undefined);
+    // تم تغيير الرقم 1 إلى true ليتوافق مع النوع المتوقع (boolean)
+    const parser = new PDFParser(null, true);
 
     parser.on("pdfParser_dataReady", () => {
       try {
